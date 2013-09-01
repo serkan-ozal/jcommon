@@ -1,4 +1,4 @@
-common
+jcommon
 ======
 
-Library for common usage
+Java library for common usage
