@@ -16,9 +16,20 @@
 
 package tr.com.serkanozal.jcommon.util;
 
+import junit.framework.Assert;
+
+import org.apache.log4j.Logger;
+import org.junit.Test;
+
 /**
  * @author Serkan ÖZAL
  */
 public class LogUtilTest {
 
+	@Test
+	public void loggerGetSuccessfully() {
+		Logger logger = LogUtil.getLogger();
+		Assert.assertEquals(getClass().getName(), logger.getName());
+	}
+	
 }

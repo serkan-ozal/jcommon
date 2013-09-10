@@ -19,6 +19,7 @@ package tr.com.serkanozal.jcommon.util;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
@@ -65,6 +66,10 @@ public class IoUtil {
 			logger.error("Unable to get resource " + "(" + resourcePath + ")" + " as file", t);
 			return null;
 		}
+	}
+	
+	public static String getContentOfInputStream(InputStream is) {
+		return new Scanner(is).useDelimiter("\\Z").next();
 	}
 	
 	private static Class<?> getCallerClass() {

@@ -16,9 +16,34 @@
 
 package tr.com.serkanozal.jcommon.util;
 
+import java.io.FileNotFoundException;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 /**
  * @author Serkan ÖZAL
  */
 public class IoUtilTest {
 
+	private static final String TEST_RESOURCE_FILE_PATH = "testResource.txt";
+	
+	@Test
+	public void resourceAsStreamGotSuccessfully() {
+		Assert.assertNotNull(IoUtil.getResourceAsStream(TEST_RESOURCE_FILE_PATH));
+	}
+	
+	@Test
+	public void resourceAsFileGotSuccessfully() {
+		Assert.assertTrue(IoUtil.getResourceAsFile(TEST_RESOURCE_FILE_PATH).exists());
+	}
+	
+	@Test
+	public void contentOfInputStreamGotSuccessfully() throws FileNotFoundException {
+		Assert.assertEquals(
+				"This is test resource", 
+				IoUtil.getContentOfInputStream(getClass().getClassLoader().getResourceAsStream(TEST_RESOURCE_FILE_PATH)));
+	}
+	
 }

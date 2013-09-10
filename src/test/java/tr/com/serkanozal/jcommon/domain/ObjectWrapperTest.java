@@ -16,9 +16,42 @@
 
 package tr.com.serkanozal.jcommon.domain;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
+import tr.com.serkanozal.jcommon.domain.model.ObjectWrapper;
+
 /**
  * @author Serkan ÖZAL
  */
 public class ObjectWrapperTest {
 
+	@Test
+	public void objectGotAndSetSuccessfully() {
+		Integer i = new Integer(1);
+		ObjectWrapper<Integer> iWrapper = new ObjectWrapper<Integer>();
+		iWrapper.set(i);
+		Assert.assertEquals(i, iWrapper.get());
+	}
+	
+	@Test
+	public void toStringReturnedSuccessfullyForNotNullObject() {
+		ObjectWrapper<Object> oWrapper = 
+				new ObjectWrapper<Object>(
+						new Object() {
+							@Override
+							public String toString() {
+								return "I am an integer";
+							}	
+						});
+		Assert.assertEquals("I am an integer", oWrapper.toString());
+	}
+	
+	@Test
+	public void toStringReturnedSuccessfullyForNullObject() {
+		ObjectWrapper<Object> oWrapper = new ObjectWrapper<Object>(null);
+		Assert.assertEquals("null", oWrapper.toString());
+	}
+	
 }
