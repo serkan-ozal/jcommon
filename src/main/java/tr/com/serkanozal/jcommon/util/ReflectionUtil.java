@@ -115,6 +115,49 @@ public class ReflectionUtil {
 		return null;
 	}
 	
+	public static Method getMethod(Class<?> cls, String methodName, Class<?>[] paramTypes) {
+		while (cls != null && cls.equals(Object.class) == false) {
+			Method method = null;
+			for (Method m : cls.getDeclaredMethods()) {
+				if (m.getName().equals(methodName)) {
+					Class<?>[] methodParamTypes = m.getParameterTypes();
+					if (paramTypes == null) {
+						if (methodParamTypes.length == 0) {
+							method = m;
+							break;
+						}	
+					}	
+					else {
+						if (paramTypes.length == methodParamTypes.length) {
+							boolean allParamsAreSame = true;
+							int length = paramTypes.length;
+							for (int i = 0; i < length; i++) {
+								if (paramTypes[i].equals(methodParamTypes[i]) == false) {
+									allParamsAreSame = false;
+									break;
+								}
+							}
+							if (allParamsAreSame) {
+								method = m;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if (method == null) {
+				logger.warn("Unable to get method " + methodName + " from class " + cls.getName() + ". " + 
+							 "If there is any super class for class " + cls.getName() + ", it will be tried for getting method ...");
+			}
+			else {
+				method.setAccessible(true);
+				return method;
+			}
+			cls = cls.getSuperclass();
+		}
+		return null;
+	}
+	
 	public static List<Method> getAllMethods(Class<?> cls) {
 		List<Method> methods = new ArrayList<Method>();
 		createMethods(cls, methods, null);

@@ -3,7 +3,7 @@
   	<modelVersion>4.0.0</modelVersion>
   	<groupId>tr.com.serkanozal</groupId>
   	<artifactId>jcommon</artifactId>
-  	<version>1.0.0-RELEASE</version>
+  	<version>1.0.1-RELEASE</version>
     <name>Java library for common usage</name>
     <url>https://github.com/serkan-ozal/jcommon</url>
      
