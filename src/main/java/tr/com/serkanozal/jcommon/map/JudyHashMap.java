@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,16 @@
 
 package tr.com.serkanozal.jcommon.map;
 
+import java.util.AbstractCollection;
 import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * @author serkanozal
+ * @author Serkan ÖZAL
  * 
  * Holds and indexes entities by Judy tree based structure and gets at O(1) complexity.
  * Complexity doesn't depends on count of entities. 
@@ -30,6 +33,9 @@ import java.util.Set;
  * 		k is the number of buckets,
  * 		n is the number of entities.
  * In this map implementation, complexity is O(1) at every entity counts. But it uses more memory.
+ * 
+ * In Judy tree based indexing structure, there are 4 levels for 4 byte of hash code as integer.
+ * Last level (level 4 or leaf node) is hold as values.
  */
 public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 
@@ -38,7 +44,6 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 	private final static int NODE_SIZE = 256;
 	
 	private JudyTree root = new JudyTree();
-	private volatile int size;
 	
 	public JudyHashMap() {
 
@@ -46,12 +51,12 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 	
 	@Override
 	public int size() {
-		return size;
+		return root.size;
 	}
 	
 	@Override
 	public boolean isEmpty() {
-		return size == 0;
+		return root.size == 0;
 	}
     
 	@Override
@@ -61,17 +66,17 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
     
     @Override
 	public Set<K> keySet() {
-    	throw new UnsupportedOperationException("\"keySet()\" operation is not supported right now !");
+    	return new JudyKeySet();
     }
     
     @Override
 	public Collection<V> values() {
-    	throw new UnsupportedOperationException("\"values()\" operation is not supported right now !");
+    	return new JudyValueCollection();
     }
     
     @Override
 	public Set<Map.Entry<K, V>> entrySet() {
-    	throw new UnsupportedOperationException("\"entrySet()\" operation is not supported right now !");
+    	return new JudyEntrySet();
     }
 	
 	@Override
@@ -100,6 +105,147 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 	@Override
 	public void clear() {
 		root.clear();
+	}
+	
+	class JudyEntrySet extends AbstractSet<Map.Entry<K, V>> {
+
+		@Override
+		public Iterator<Map.Entry<K, V>> iterator() {
+			return new JudyEntryIterator(root.firstEntry);
+		}
+
+		@Override
+		public int size() {
+			return root.size;
+		}
+		
+	}
+	
+	class JudyEntryIterator implements Iterator<Map.Entry<K, V>> {
+
+		JudyEntry currentEntry;
+		
+		JudyEntryIterator(JudyEntry firstEntry) {
+			currentEntry = firstEntry;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			if (currentEntry == null) {
+				return false;
+			}
+			else {
+				return currentEntry.next != null;
+			}
+		}
+
+		@Override
+		public JudyEntry next() {
+			if (currentEntry != null) {
+				JudyEntry nextEntry = currentEntry;
+				currentEntry = currentEntry.next;
+				return nextEntry;
+			}
+			else {
+				return null;
+			}	
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("\"remove()\" operation is not supported by JudyEntryIterator !");
+		}
+		
+	}
+	
+	class JudyKeySet extends AbstractSet<K> {
+
+		@Override
+		public Iterator<K> iterator() {
+			return new JudyKeyIterator(new JudyEntryIterator(root.firstEntry));
+		}
+
+		@Override
+		public int size() {
+			return root.size;
+		}
+		
+	}
+	
+	class JudyKeyIterator implements Iterator<K> {
+
+		JudyEntryIterator entryIterator;
+		
+		JudyKeyIterator(JudyEntryIterator entryIterator) {
+			this.entryIterator = entryIterator;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return entryIterator.hasNext();
+		}
+
+		@Override
+		public K next() {
+			JudyEntry entry = entryIterator.next();
+			if (entry == null) {
+				return null;
+			}
+			else {
+				return entry.key;
+			}
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("\"remove()\" operation is not supported by JudyEntryIterator !");
+		}
+		
+	}
+	
+	class JudyValueCollection extends AbstractCollection<V> {
+
+		@Override
+		public Iterator<V> iterator() {
+			return new JudyValueIterator(new JudyEntryIterator(root.firstEntry));
+		}
+
+		@Override
+		public int size() {
+			return root.size;
+		}
+		
+	}
+	
+	class JudyValueIterator implements Iterator<V> {
+
+		JudyEntryIterator entryIterator;
+		
+		JudyValueIterator(JudyEntryIterator entryIterator) {
+			this.entryIterator = entryIterator;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return entryIterator.hasNext();
+		}
+
+		@Override
+		public V next() {
+			JudyEntry entry = entryIterator.next();
+			if (entry == null) {
+				return null;
+			}
+			else {
+				return entry.value;
+			}
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("\"remove()\" operation is not supported by JudyEntryIterator !");
+		}
+		
 	}
 	
 	class JudyEntry implements Map.Entry<K, V> {
@@ -135,11 +281,6 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		
 	}
 	
-	/**
-	 * Represents nodes for all-levels in Judy tree based indexing structure.
-	 * There are 4 levels for 4 byte of hash code as integer.
-	 * Last level (level 4 or leaf node) is hold as values.
-	 */
 	abstract class JudyNode {
 		
 		abstract V get(int hash, byte level);
@@ -156,12 +297,23 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		JudyHashMap.JudyNode[] children;
 		
 		JudyIntermediateNode() {
+			init();
+		}
+		
+		void init() {
 			children = new JudyHashMap.JudyNode[NODE_SIZE];
+		}
+		
+		void initIfNeeded() {
+			if (children == null) {
+				init();
+			}
 		}
 		
 		@SuppressWarnings("unchecked")
 		@Override
 		V get(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -175,6 +327,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		@SuppressWarnings("unchecked")
 		@Override
 		V put(int hash, K key, V value, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -194,6 +347,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		@SuppressWarnings("unchecked")
 		@Override
 		V remove(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -207,6 +361,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		@SuppressWarnings("unchecked")
 		@Override
 		boolean containsKey(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -223,7 +378,10 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 			if (children != null) {
 				// Clear child nodes
 				for (JudyNode child : children) {
-					child.clear((byte) (level + 1));
+					if (child != null) {
+						child.clear((byte) (level + 1));
+					}	
+					child = null; // Now it can be collected by GC
 				}
 			}
 			children = null; // Now it can be collected by GC
@@ -237,12 +395,23 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		JudyHashMap.JudyEntry[] entries;
 		
 		JudyLeafNode() {
+			init();
+		}
+		
+		void init() {
 			entries = new JudyHashMap.JudyEntry[NODE_SIZE];
+		}
+		
+		void initIfNeeded() {
+			if (entries == null) {
+				init();
+			}
 		}
 		
 		@SuppressWarnings("unchecked")
 		@Override
 		V get(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -256,6 +425,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		@SuppressWarnings("unchecked")
 		@Override
 		V put(int hash, K key, V value, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -281,6 +451,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		@SuppressWarnings("unchecked")
 		@Override
 		V remove(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -312,6 +483,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		
 		@Override
 		boolean containsKey(int hash, byte level) {
+			initIfNeeded();
 			// Find related byte for using as index in current level
 			byte nextLevel = (byte) (level + 1);
 			short index = (short)(((hash >> (32 - (nextLevel << 3))) & 0x000000FF));
@@ -334,6 +506,7 @@ public class JudyHashMap<K, V> extends AbstractMap<K, V> {
 		JudyIntermediateNode[] nodes = new JudyHashMap.JudyIntermediateNode[NODE_SIZE];
 		JudyEntry firstEntry;
 		JudyEntry lastEntry;
+		volatile int size;
 		
 		JudyTree() {
 			// Create and initialize first level nodes
