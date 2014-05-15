@@ -32,12 +32,6 @@ import tr.com.serkanozal.jcommon.util.JvmUtil;
  */
 public class JudyHashMapTest {
 
-	/*
-	 * Set<K> keySet();
-	 * Collection<V> values();
-	 * Set<Map.Entry<K, V>> entrySet(); 
-	 */
-	
 	@Test
 	public void sizeRetrievedSuccessfully() {
 		final int ENTRY_COUNT = Integer.SIZE - 1;
