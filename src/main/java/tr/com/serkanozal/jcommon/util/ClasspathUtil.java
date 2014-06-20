@@ -18,6 +18,7 @@ package tr.com.serkanozal.jcommon.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -38,6 +40,7 @@ public class ClasspathUtil {
 	private static final Logger logger = Logger.getLogger(ClasspathUtil.class);
 	
 	private static Set<URL> classpathUrls;
+	private static String fullClasspath;
 	
 	static {
 		init();
@@ -51,13 +54,48 @@ public class ClasspathUtil {
 		return classpathUrls;
 	}
 	
+	public static String getFullClasspath() {
+		return fullClasspath;
+	}
+	
 	private static void init() {
 		classpathUrls = findClasspathUrls();
 		logger.info("Found classpath URL list: " + classpathUrls);
+		StringBuilder classpathBuilder = new StringBuilder();
+		if (classpathUrls != null) {
+			for (URL url : classpathUrls) {
+				classpathBuilder.append(url.getPath()).append(File.pathSeparator);
+			}
+		}
+		fullClasspath = classpathBuilder.toString();
 	}
 	
 	private static Set<URL> findClasspathUrls() {
 		Set<URL> urls = new HashSet<URL>();
+		
+		try {
+			String[] classpathProperties = System.getProperty("java.class.path").split(File.pathSeparator);
+			for (String classpathProperty : classpathProperties) {
+				urls.add(new File(classpathProperty).toURI().toURL());
+			}	
+		} 
+		catch (MalformedURLException e) {
+			logger.error("Error occured while getting classpath from system property \"java.class.path\"", e);
+		}
+		
+		String surefireProperty = System.getProperty("surefire.test.class.path");
+		if (StringUtils.isNotEmpty(surefireProperty)) {
+			try {
+				String[] surefireClasspathProperties = surefireProperty.split(File.pathSeparator);
+				for (String surefireClasspathProperty : surefireClasspathProperties) {
+					urls.add(new File(surefireClasspathProperty).toURI().toURL());
+				}	
+			} 
+			catch (MalformedURLException e) {
+				logger.error("Error occured while getting classpath from system property \"surefire.test.class.path\"", e);
+			}
+		}
+		
 		// Start with Current Thread's loader
 		ClassLoader ctxLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader loader = ctxLoader;
@@ -68,13 +106,20 @@ public class ClasspathUtil {
 
 		// Also start with this classes's loader, in some environment this can
 		// be different than the current thread's one
-		ClassLoader sysLoader = ClasspathUtil.class.getClassLoader();
+		ClassLoader appLoader = ClasspathUtil.class.getClassLoader();
+		loader = appLoader;
+		while (loader != null) {
+			urls.addAll(findClasspathsByLoader(loader));
+			loader = loader.getParent();
+		}
+		
+		ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
 		loader = sysLoader;
 		while (loader != null) {
 			urls.addAll(findClasspathsByLoader(loader));
 			loader = loader.getParent();
 		}
-
+		
 		Map<URL, URL> replaceURLs = new HashMap<URL, URL>();
 		Set<URL> derivedUrls = new HashSet<URL>();
 		for (URL url : urls) {
