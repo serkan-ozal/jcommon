@@ -303,28 +303,29 @@ public class ReflectionUtil {
 	}
 	
 	public static Class<?> getNonPrimitiveType(String clsName) {
-		if (clsName.equalsIgnoreCase("boolean")) {
+		clsNameLowerCase = clsName.toLowerCase();
+		if (clsNameLowerCase.equals("boolean")) {
 			return Boolean.class;
 		}	
-		else if (clsName.equalsIgnoreCase("byte")) {
+		else if (clsNameLowerCase.equals("byte")) {
 			return Byte.class;
 		}
-		else if (clsName.equalsIgnoreCase("char")) {
+		else if (clsNameLowerCase.equals("char")) {
 			return Character.class;
 		}
-		else if (clsName.equalsIgnoreCase("short")) {
+		else if (clsNameLowerCase.equals("short")) {
 			return Short.class;
 		}	
-		else if (clsName.equalsIgnoreCase("int")) {
+		else if (clsNameLowerCase.equals("int")) {
 			return Integer.class;
 		}	
-		else if (clsName.equalsIgnoreCase("float")) {
+		else if (clsNameLowerCase.equals("float")) {
 			return Float.class;
 		}	
-		else if (clsName.equalsIgnoreCase("long")) {
+		else if (clsNameLowerCase.equals("long")) {
 			return Long.class;
 		}	
-		else if (clsName.equalsIgnoreCase("double")) {
+		else if (clsNameLowerCase.equals("double")) {
 			return Double.class;
 		}	
 		else {
